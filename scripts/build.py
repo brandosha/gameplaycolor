@@ -12,6 +12,7 @@ import socketserver
 import subprocess
 import tempfile
 import urllib.parse
+import requests
 
 import lxml.etree
 import lxml.html
@@ -21,6 +22,7 @@ import paths
 
 HTMLCOMPRESSOR_URL = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/htmlcompressor/htmlcompressor-1.5.3.jar"
 YUICOMPRESSOR_URL = "https://github.com/yui/yuicompressor/releases/download/v2.4.8/yuicompressor-2.4.8.jar"
+JSMINIFIER_URL = "https://javascript-minifier.com/raw"
 
 
 SCRIPTS_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
@@ -100,6 +102,11 @@ def yuicompressor(contents, suffix):
   output = subprocess.check_output(command + [temp]).decode('utf-8')
   os.unlink(temp)
   return output
+
+def jsminifier(contents):
+  data = {'input': contents}
+  response = requests.post(JSMINIFIER_URL, data=data)
+  return response.text
 
 
 def download(url, directory):
@@ -193,7 +200,7 @@ def build(options):
   script += extract_tags(html, "//script[@type='text/javascript']", "src", paths.SOURCE_DIR)
   if not settings["debug"] and not options.debug:
     print("Minifying JavaScript...")
-    script = yuicompressor(script, '.js')
+    script = jsminifier(script)
   append_javascript(html, script)
 
   print("Exctracting CSS...")
